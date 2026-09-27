@@ -33,159 +33,61 @@ compose.yaml      # API, migration, and PostgreSQL services
 Dockerfile        # Application container image
 ```
 
-## Requirements
+## Run the application
 
-Choose either the Docker Compose workflow or the local-development workflow below.
+Install and start Docker Desktop (or Docker Engine with Compose). No local Python
+or uv installation is needed to run the application. From the repository root:
 
-For the Docker Compose workflow:
+| Flavor | Command | Behavior |
+|---|---|---|
+| Development | `./scripts/run dev` | Full Docker stack; Python changes in `app/` reload automatically |
+| Production | `./scripts/run prod` | Same Docker stack; code baked into the image, no reload |
 
-- Docker Desktop, or Docker Engine with Docker Compose
+Both commands build the image using locked dependencies, start PostgreSQL, wait
+for its health check, apply migrations, and then start the API. Migration failure
+prevents API startup. Services are recreated on each launch so migrations run
+again; existing database data stays in the named `postgres_data` volume.
 
-For local Python development:
+Open <http://localhost:8000/docs> to try the API. The root, health check, and metrics
+are available at `/`, `/health`, and `/metrics` respectively.
 
-- Python 3.14
-- Docker, used to run PostgreSQL locally
-- `pip`, included with a normal Python installation
+Logs stay attached to your terminal. Press Ctrl+C to stop the stack. To switch
+flavors, stop the current run and launch the other command. Both flavors use the
+same database volume and ports; they are not isolated deployment environments.
+Restart the launcher after changing dependencies, migrations, or Docker settings.
+Only application source changes reload automatically in dev.
 
-The commands below assume you are in the repository root—the directory containing `compose.yaml` and `requirements.txt`.
+The production flavor runs a non-root container with one Uvicorn worker and a
+25-second graceful shutdown window (Compose allows 30 seconds). One worker keeps
+the current in-process Prometheus metrics consistent. Proxy headers are disabled.
+This selects production runtime behavior; deploying publicly still requires
+replacing local database credentials, restricting database access, and configuring
+TLS, authentication, and backups. Authentication is not implemented in the API.
 
-## Option 1: Run the complete stack with Docker Compose
+`compose.yaml` defines the shared stack and production defaults;
+`compose.dev.yaml` adds the read-only source mount and reload command. The launcher
+selects these files for you. There is no separate local-Python startup path or
+manual migration step.
 
-This is the shortest way to start the project:
-
-```bash
-docker compose up --build
-```
-
-Compose will:
-
-1. Start PostgreSQL.
-2. Wait for PostgreSQL to become healthy.
-3. Run all Alembic migrations.
-4. Start the FastAPI application on port `8000`.
-
-Open:
-
-- API root: <http://localhost:8000/>
-- Health check: <http://localhost:8000/health>
-- Interactive API documentation: <http://localhost:8000/docs>
-- Metrics: <http://localhost:8000/metrics>
-
-Stop the stack with:
+Validate the launcher without starting services:
 
 ```bash
-docker compose down
+bash -n scripts/run
+python3 -m unittest discover -s scripts -p 'test_*.py' -v
 ```
-
-PostgreSQL data is stored in the `postgres_data` Docker volume and survives a normal `docker compose down`.
-
-To also delete all local database data, use:
-
-```bash
-docker compose down -v
-```
-
-Warning: the `-v` option permanently removes the Compose database volume. The next startup creates an empty database and reruns the migrations.
-
-## Option 2: Run Python locally and PostgreSQL in Docker
-
-This workflow is convenient when changing Python code because Uvicorn can automatically reload the application.
-
-### 1. Create a virtual environment
-
-On macOS or Linux:
-
-```bash
-python3.14 -m venv .venv
-source .venv/bin/activate
-```
-
-On Windows PowerShell:
-
-```powershell
-py -3.14 -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-When activated, the terminal prompt normally begins with `(.venv)`.
-
-### 2. Install dependencies
-
-```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Using `python -m pip` ensures that packages are installed for the active Python interpreter.
-
-### 3. Start PostgreSQL
-
-Start only the database service:
-
-```bash
-docker compose up -d db
-```
-
-Check its status:
-
-```bash
-docker compose ps
-```
-
-The database should eventually report `healthy`.
-
-### 4. Configure the database URL
-
-On macOS or Linux:
-
-```bash
-export DATABASE_URL='postgresql+psycopg://opscopilot:localdev@localhost:5432/opscopilot'
-export LOG_LEVEL='INFO'
-```
-
-On Windows PowerShell:
-
-```powershell
-$env:DATABASE_URL = 'postgresql+psycopg://opscopilot:localdev@localhost:5432/opscopilot'
-$env:LOG_LEVEL = 'INFO'
-```
-
-The hostname is `localhost` here because Python runs on the host machine. Inside Compose, the API uses the Compose service hostname `db` instead.
-
-### 5. Apply database migrations
-
-```bash
-python -m alembic upgrade head
-```
-
-Migrations create and update the database tables. Run this after starting a fresh database and whenever new migrations are added.
-
-### 6. Start FastAPI
-
-```bash
-python -m uvicorn app.main:app --reload
-```
-
-The command means:
-
-- `app.main`: import the `app/main.py` module.
-- `app`: use the FastAPI object named `app` from that module.
-- `--reload`: restart the development server after Python files change.
-
-The application is available at <http://localhost:8000>.
 
 ## Run tests
 
-With the virtual environment active, run:
+Run the complete test suite:
 
 ```bash
-python -m pytest -v
+uv run python -m pytest -v
 ```
 
 Run one test file:
 
 ```bash
-python -m pytest tests/test_incidents.py -v
+uv run python -m pytest tests/test_incidents.py -v
 ```
 
 The tests override the application's database dependency and use an isolated in-memory SQLite database. They do not require the Compose PostgreSQL service to be running.

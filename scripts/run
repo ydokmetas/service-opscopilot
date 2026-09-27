@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# One Docker Compose stack, with development and production runtime flavors.
+set -euo pipefail
+
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+usage() {
+    cat <<'HELP'
+Usage: scripts/run {dev|prod}
+
+  dev   Build and run PostgreSQL, migrations, and API with live code reload.
+  prod  Build and run the same stack with baked-in code and no reload.
+
+Requires Docker with Compose. Both modes run attached; Ctrl+C stops the stack.
+Database data persists across restarts and is shared between flavors.
+HELP
+}
+[[ $# -eq 1 ]] || { usage >&2; exit 2; }
+case "$1" in
+    -h|--help) usage; exit 0 ;;
+    dev|prod) mode="$1" ;;
+    *) usage >&2; exit 2 ;;
+esac
+
+command -v docker >/dev/null 2>&1 || { echo 'Error: Docker is required.' >&2; exit 1; }
+docker compose version >/dev/null
+compose=(docker compose -f "$ROOT/compose.yaml")
+if [[ "$mode" == dev ]]; then
+    compose+=(-f "$ROOT/compose.dev.yaml")
+fi
+
+# Recreate services so completed migrations run again on every launch.
+# The named database volume survives container recreation.
+exec "${compose[@]}" up --build --force-recreate
