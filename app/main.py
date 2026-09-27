@@ -1,25 +1,19 @@
 import logging
 from contextlib import asynccontextmanager
+from time import perf_counter
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response, status
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    generate_latest,
+)
 
 from app.api import document, health, incident
 from app.error_handlers import register_error_handlers
 from app.logging_config import configure_logging
-
-from time import perf_counter
-
-from fastapi import Request
-
 from app.metrics import (
     HTTP_REQUEST_DURATION_SECONDS,
     HTTP_REQUESTS_TOTAL,
-)
-
-from fastapi import Response
-from prometheus_client import (
-    CONTENT_TYPE_LATEST,
-    generate_latest,
 )
 
 configure_logging()
@@ -35,6 +29,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
+    title="OpsCopilot API",
+    description=(
+        "An operations management API for tracking incidents and managing "
+        "operational documents, with planned AI capabilities for LLM-assisted "
+        "incident investigation and retrieval-augmented generation (RAG)."
+    ),
     debug=False,
     lifespan=lifespan,
 )
@@ -45,7 +45,7 @@ async def record_http_metrics(
     call_next,
 ):
     start_time = perf_counter()
-    status_code = 500
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
     try:
         response = await call_next(request)
@@ -86,4 +86,3 @@ register_error_handlers(app)
 app.include_router(document.router)
 app.include_router(health.router)
 app.include_router(incident.router)
-

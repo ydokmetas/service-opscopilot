@@ -1,3 +1,6 @@
+from fastapi import status
+
+
 def valid_incident_data(**overrides):
     payload = {
         "title": "Checkout failure",
@@ -16,7 +19,7 @@ def create_incident(client, **overrides):
         json=valid_incident_data(**overrides),
     )
 
-    assert response.status_code == 201
+    assert response.status_code == status.HTTP_201_CREATED
     return response.json()
 
 
@@ -28,7 +31,7 @@ def test_create_incident(client):
     response = client.post("/incidents", json=payload)
 
     # Assert
-    assert response.status_code == 201
+    assert response.status_code == status.HTTP_201_CREATED
 
     body = response.json()
 
@@ -49,7 +52,7 @@ def test_get_incident(client):
     response = client.get(f"/incidents/{created['id']}")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     body = response.json()
 
     assert body["id"] == created["id"]
@@ -75,7 +78,7 @@ def test_list_incidents(client):
     response = client.get("/incidents")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     body = response.json()
 
     assert isinstance(body, list)
@@ -100,7 +103,7 @@ def test_update_incident(client):
     )
 
     # Assert the update response
-    assert update_response.status_code == 200
+    assert update_response.status_code == status.HTTP_200_OK
     updated = update_response.json()
 
     assert updated["status"] == "resolved"
@@ -110,7 +113,7 @@ def test_update_incident(client):
     # Read again to prove the changes were persisted.
     get_response = client.get(f"/incidents/{created['id']}")
 
-    assert get_response.status_code == 200
+    assert get_response.status_code == status.HTTP_200_OK
     persisted = get_response.json()
     assert persisted["status"] == "resolved"
     assert persisted["severity"] == "high"
@@ -125,13 +128,13 @@ def test_delete_incident(client):
     delete_response = client.delete(f"/incidents/{incident_id}")
 
     # Assert the delete response
-    assert delete_response.status_code == 204
+    assert delete_response.status_code == status.HTTP_204_NO_CONTENT
     assert delete_response.content == b""
 
     # Confirm the incident no longer exists.
     get_response = client.get(f"/incidents/{incident_id}")
 
-    assert get_response.status_code == 404
+    assert get_response.status_code == status.HTTP_404_NOT_FOUND
     assert get_response.json() == {"detail": "Incident not found"}
 
 
@@ -143,7 +146,7 @@ def test_get_missing_incident(client):
     response = client.get(f"/incidents/{missing_id}")
 
     # Assert
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Incident not found"}
 
 def test_create_incident_rejects_invalid_severity(client):
@@ -154,7 +157,7 @@ def test_create_incident_rejects_invalid_severity(client):
     response = client.post("/incidents", json=payload)
 
     # Assert
-    assert response.status_code == 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     validation_errors = response.json()["detail"]
 
@@ -165,7 +168,7 @@ def test_create_incident_rejects_invalid_severity(client):
 
     # Rejected input must not create a database record.
     list_response = client.get("/incidents")
-    assert list_response.status_code == 200
+    assert list_response.status_code == status.HTTP_200_OK
     assert list_response.json() == []
 
 def test_update_missing_incident(client):
@@ -174,12 +177,12 @@ def test_update_missing_incident(client):
         json={"status": "resolved"},
     )
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Incident not found"}
 
 
 def test_delete_missing_incident(client):
     response = client.delete("/incidents/999999")
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Incident not found"}

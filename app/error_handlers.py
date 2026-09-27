@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import (
     OperationalError,
@@ -26,7 +26,7 @@ def register_error_handlers(app: FastAPI):
         )
 
         return JSONResponse(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={
                 "detail": "Database temporarily unavailable",
             },
@@ -43,7 +43,7 @@ def register_error_handlers(app: FastAPI):
         )
 
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "detail": "Internal server error",
             },
@@ -60,7 +60,7 @@ def register_error_handlers(app: FastAPI):
         )
 
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 "detail": "Internal server error",
             },

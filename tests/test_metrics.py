@@ -1,10 +1,13 @@
+from fastapi import status
+
+
 def test_metrics_endpoint(client):
     # Arrange and Act
     client.get("/health")
     response = client.get("/metrics")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
 
     body = response.text
 
@@ -17,5 +20,5 @@ def test_health_request_is_measured(client):
 
     response = client.get("/metrics")
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert 'route="/health"' in response.text

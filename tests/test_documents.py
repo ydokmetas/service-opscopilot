@@ -1,3 +1,6 @@
+from fastapi import status
+
+
 def valid_document_data(**overrides):
     payload = {
         "title": "Checkout Runbook",
@@ -15,7 +18,7 @@ def create_document(client, **overrides):
         json=valid_document_data(**overrides),
     )
 
-    assert response.status_code == 201
+    assert response.status_code == status.HTTP_201_CREATED
     return response.json()
 
 
@@ -27,7 +30,7 @@ def test_create_document(client):
     response = client.post("/documents", json=payload)
 
     # Assert
-    assert response.status_code == 201
+    assert response.status_code == status.HTTP_201_CREATED
 
     body = response.json()
 
@@ -53,7 +56,7 @@ def test_list_documents(client):
     response = client.get("/documents")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     body = response.json()
 
     assert isinstance(body, list)
@@ -72,7 +75,7 @@ def test_get_document(client):
     response = client.get(f"/documents/{created['id']}")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     body = response.json()
 
     assert body["id"] == created["id"]
@@ -90,13 +93,13 @@ def test_delete_document(client):
     delete_response = client.delete(f"/documents/{document_id}")
 
     # Assert the delete response
-    assert delete_response.status_code == 204
+    assert delete_response.status_code == status.HTTP_204_NO_CONTENT
     assert delete_response.content == b""
 
     # Confirm the document no longer exists.
     get_response = client.get(f"/documents/{document_id}")
 
-    assert get_response.status_code == 404
+    assert get_response.status_code == status.HTTP_404_NOT_FOUND
     assert get_response.json() == {"detail": "Document not found"}
 
 
@@ -108,7 +111,7 @@ def test_create_document_rejects_invalid_input(client):
     response = client.post("/documents", json=payload)
 
     # Assert
-    assert response.status_code == 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     validation_errors = response.json()["detail"]
     assert any(
@@ -118,19 +121,19 @@ def test_create_document_rejects_invalid_input(client):
 
     # Rejected input must not create a database record.
     list_response = client.get("/documents")
-    assert list_response.status_code == 200
+    assert list_response.status_code == status.HTTP_200_OK
     assert list_response.json() == []
 
 
 def test_get_missing_document(client):
     response = client.get("/documents/999999")
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Document not found"}
 
 
 def test_delete_missing_document(client):
     response = client.delete("/documents/999999")
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Document not found"}
