@@ -6,10 +6,8 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.schemas.incident import (
     IncidentCreate,
+    IncidentListParams,
     IncidentResponse,
-    IncidentService,
-    IncidentSeverity,
-    IncidentStatus,
     IncidentUpdate,
 )
 from app.services import incident as incident_service
@@ -21,19 +19,15 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 @router.get("", response_model=list[IncidentResponse])
 def list_incidents(
     db: DbSession,
-    service: Annotated[IncidentService | None, Query()] = None,
-    severity: IncidentSeverity | None = None,
-    status: Annotated[IncidentStatus | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    params: Annotated[IncidentListParams, Query()],
 ):
     return incident_service.list_incidents(
         db=db,
-        service=service,
-        severity=severity,
-        status=status,
-        limit=limit,
-        offset=offset,
+        service=params.service,
+        severity=params.severity,
+        status=params.status,
+        limit=params.limit,
+        offset=params.offset,
     )
 
 
@@ -65,4 +59,3 @@ def delete_incident(incident_id: int, db: DbSession,):
     deleted = incident_service.delete_incident(db, incident_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
-

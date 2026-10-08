@@ -9,6 +9,14 @@ IncidentDescription = Annotated[str, Field(min_length=5)]
 IncidentTitle = Annotated[str, Field(min_length=3, max_length=200)]
 IncidentService = Annotated[str, Field(min_length=2, max_length=100)]
 
+class IncidentListParams(BaseModel):
+    service: IncidentService | None = None
+    severity: IncidentSeverity | None = None
+    status: IncidentStatus | None = None
+    limit: int = Field(default=20, ge=1, le=100)
+    offset: int = Field(default=0, ge=0)
+
+
 class IncidentCreate(BaseModel):
     title: IncidentTitle
     description: IncidentDescription
