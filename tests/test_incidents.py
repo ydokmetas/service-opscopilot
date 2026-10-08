@@ -1,3 +1,4 @@
+import pytest
 from fastapi import status
 
 
@@ -39,7 +40,7 @@ def test_create_incident(client):
     assert body["description"] == payload["description"]
     assert body["service"] == payload["service"]
     assert body["severity"] == payload["severity"]
-    assert body["status"] == "open"
+    assert body["status"] == "triggered"
     assert isinstance(body["id"], int)
     assert body["created_at"] is not None
 
@@ -186,3 +187,38 @@ def test_delete_missing_incident(client):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json() == {"detail": "Incident not found"}
+
+
+@pytest.mark.parametrize("incident_status", ["triggered", "acknowledged", "resolved"])
+def test_update_and_filter_incident_status(client, incident_status):
+    created = create_incident(client)
+    other = create_incident(client)
+    response = client.patch(
+        f"/incidents/{created['id']}", json={"status": incident_status}
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == incident_status
+    response = client.get("/incidents", params={"status": incident_status})
+    assert response.status_code == 200
+    expected = {created["id"], other["id"]} if incident_status == "triggered" else {created["id"]}
+    assert {item["id"] for item in response.json()} == expected
+
+
+@pytest.mark.parametrize("invalid_status", ["open", "in_progress", "banana", "TRIGGERED", ""])
+def test_reject_invalid_incident_status(client, invalid_status):
+    created = create_incident(client)
+    response = client.patch(
+        f"/incidents/{created['id']}", json={"status": invalid_status}
+    )
+    assert response.status_code == 422
+    assert client.get(f"/incidents/{created['id']}").json()["status"] == "triggered"
+    response = client.get("/incidents", params={"status": invalid_status})
+    assert response.status_code == 422
+
+
+def test_omitted_and_null_status_preserve_current_status(client):
+    created = create_incident(client)
+    for payload in ({"title": "Updated incident"}, {"status": None}):
+        response = client.patch(f"/incidents/{created['id']}", json=payload)
+        assert response.status_code == 200
+        assert response.json()["status"] == "triggered"

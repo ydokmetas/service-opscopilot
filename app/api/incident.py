@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -7,6 +7,9 @@ from app.database.connection import get_db
 from app.schemas.incident import (
     IncidentCreate,
     IncidentResponse,
+    IncidentService,
+    IncidentSeverity,
+    IncidentStatus,
     IncidentUpdate,
 )
 from app.services import incident as incident_service
@@ -18,14 +21,9 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 @router.get("", response_model=list[IncidentResponse])
 def list_incidents(
     db: DbSession,
-    service: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
-    severity: Literal[
-        "low",
-        "medium",
-        "high",
-        "critical",
-    ] | None = None,
-    status: Annotated[str | None, Query(min_length=1)] = None,
+    service: Annotated[IncidentService | None, Query()] = None,
+    severity: IncidentSeverity | None = None,
+    status: Annotated[IncidentStatus | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ):

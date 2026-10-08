@@ -4,14 +4,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import Incident as IncidentModel
+from app.schemas.incident import IncidentService, IncidentSeverity, IncidentStatus
 
 logger = logging.getLogger(__name__)
 
 def list_incidents(
     db: Session,
-    service: str | None = None,
-    severity: str | None = None,
-    status: str | None = None,
+    service: IncidentService | None = None,
+    severity: IncidentSeverity | None = None,
+    status: IncidentStatus | None = None,
     limit: int = 20,
     offset: int = 0,
 ):
@@ -47,7 +48,7 @@ def get_incident(db: Session, incident_id: int):
 def create_incident(db: Session, data: dict):
     incident = IncidentModel(
         **data,
-        status="open",
+        status="triggered",
     )
     db.add(incident)
     db.commit()

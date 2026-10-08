@@ -15,7 +15,7 @@ class Incident(Base):
     description: Mapped[str] = mapped_column(Text)
     service: Mapped[str] = mapped_column(String(100))
     severity: Mapped[str] = mapped_column(String(20))
-    status: Mapped[str] = mapped_column(String(20),default="open",)
+    status: Mapped[str] = mapped_column(String(20),default="triggered",)
     created_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True),
     server_default=func.now(),

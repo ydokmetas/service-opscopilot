@@ -136,6 +136,10 @@ Valid incident severities are:
 - `high`
 - `critical`
 
+Valid incident statuses are `triggered`, `acknowledged`, and `resolved` (case-sensitive).
+New incidents start as `triggered`. Status updates accept any of these values;
+transition ordering is not enforced.
+
 Partially update an incident:
 
 ```bash
@@ -150,7 +154,7 @@ List incidents supports these optional query parameters:
 |---|---|---|
 | `service` | Exact service name | 2–100 characters |
 | `severity` | Exact severity | One of the four values above |
-| `status` | Exact incident status | At least 1 character |
+| `status` | Exact incident status | `triggered`, `acknowledged`, or `resolved` |
 | `limit` | Maximum number returned | Default `20`; from `1` through `100` |
 | `offset` | Number of records to skip | Default `0`; cannot be negative |
 
