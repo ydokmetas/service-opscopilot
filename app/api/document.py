@@ -25,25 +25,10 @@ def create_document(
 @router.get("", response_model=list[DocumentResponse])
 def list_documents(
     db: DbSession,
-    title: str | None = Query(
-        default=None,
-        min_length=1,
-        max_length=200,
-    ),
-    document_type: str | None = Query(
-        default=None,
-        min_length=1,
-        max_length=50,
-    ),
-    limit: int = Query(
-        default=20,
-        ge=1,
-        le=100,
-    ),
-    offset: int = Query(
-        default=0,
-        ge=0,
-    ),
+    title: Annotated[str | None, Query(min_length=1, max_length=200)] = None,
+    document_type: Annotated[str | None, Query(min_length=1, max_length=50)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ):
     return document_service.list_documents(
         db=db,

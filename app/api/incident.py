@@ -18,30 +18,16 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 @router.get("", response_model=list[IncidentResponse])
 def list_incidents(
     db: DbSession,
-    service: str | None = Query(
-        default=None,
-        min_length=2,
-        max_length=100,
-    ),
+    service: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
     severity: Literal[
         "low",
         "medium",
         "high",
         "critical",
     ] | None = None,
-    status: str | None = Query(
-        default=None,
-        min_length=1,
-    ),
-    limit: int = Query(
-        default=20,
-        ge=1,
-        le=100,
-    ),
-    offset: int = Query(
-        default=0,
-        ge=0,
-    ),
+    status: Annotated[str | None, Query(min_length=1)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ):
     return incident_service.list_incidents(
         db=db,
