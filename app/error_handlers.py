@@ -5,9 +5,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import (
     OperationalError,
     SQLAlchemyError,
+)
+from sqlalchemy.exc import (
     TimeoutError as SQLAlchemyTimeoutError,
 )
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,10 +1,10 @@
 """Launcher contract tests; no Docker daemon, database, or package downloads needed."""
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 
 
 class LauncherTests(unittest.TestCase):

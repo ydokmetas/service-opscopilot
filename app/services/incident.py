@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.database.models import Incident as IncidentModel
 
-
 logger = logging.getLogger(__name__)
 
 def list_incidents(

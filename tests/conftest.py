@@ -12,7 +12,6 @@ from app.database.connection import get_db
 from app.database.models import Base
 from app.main import app
 
-
 test_engine = create_engine(
     "sqlite://",
     connect_args={"check_same_thread": False},
